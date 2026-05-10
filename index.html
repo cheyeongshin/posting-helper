@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>포스팅 도우미</title>
+<style>
+  :root {
+    --font: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    --bg: #F2F2F7;
+    --card: #FFFFFF;
+    --grouped: #F2F2F7;
+    --dark: #1C1C1E;
+    --muted: #8E8E93;
+    --light: #C7C7CC;
+    --accent: #007AFF;
+    --accent-soft: #EAF2FF;
+    --green: #34C759;
+    --border: #E5E5EA;
+    --danger: #FF3B30;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--dark); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+  .header {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--border);
+    padding: 14px 24px; display: flex; align-items: center;
+    justify-content: space-between; position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; color: var(--dark); }
+  .logo span { color: var(--accent); }
+  .header-sub { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 28px 16px 80px; }
+
+  .steps { display: flex; align-items: center; margin-bottom: 28px; }
+  .step { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+  .step-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--border); color: var(--muted);
+    font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .step.active .step-num { background: var(--accent); color: #fff; }
+  .step.done .step-num { background: var(--green); color: #fff; }
+  .step-label { font-size: 12px; color: var(--muted); white-space: nowrap; font-weight: 400; }
+  .step.active .step-label { color: var(--dark); font-weight: 600; }
+  .step.done .step-label { color: var(--green); }
+  .step-line { flex: 1; height: 0.5px; background: var(--border); margin: 0 10px; min-width: 16px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .sec-label {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 8px; padding-left: 4px;
+  }
+
+  .card {
+    background: var(--card); border-radius: 12px;
+    border: 0.5px solid var(--border);
+    padding: 20px; margin-bottom: 16px;
+  }
+
+  .type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px; }
+  .type-btn {
+    border: 0.5px solid var(--border); border-radius: 12px;
+    padding: 14px 8px; text-align: center; cursor: pointer;
+    background: var(--card); transition: all 0.15s;
+    font-size: 12px; color: var(--muted); user-select: none;
+    font-family: var(--font);
+  }
+  .type-btn:hover { border-color: var(--accent); color: var(--dark); }
+  .type-btn.selected {
+    border-color: var(--accent); border-width: 1.5px;
+    background: var(--accent-soft); color: var(--accent); font-weight: 600;
+  }
+  .type-icon { font-size: 22px; margin-bottom: 5px; }
+
+  label {
+    display: block; font-size: 13px; color: var(--muted);
+    margin-bottom: 6px; font-weight: 500;
+  }
+  input[type="text"], textarea, select {
+    width: 100%; background: var(--grouped); border: 0.5px solid var(--border);
+    border-radius: 10px; padding: 11px 13px;
+    font-family: var(--font); font-size: 15px;
+    color: var(--dark); outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+    resize: none; margin-bottom: 16px; -webkit-appearance: none;
+  }
+  input[type="text"]:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,122,255,0.12);
+  }
+  input::placeholder, textarea::placeholder { color: var(--light); }
+  textarea { min-height: 100px; line-height: 1.7; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .hashtag-wrap {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    background: var(--grouped); border: 0.5px solid var(--border);
+    border-radius: 10px; padding: 9px 12px;
+    margin-bottom: 16px; min-height: 46px; cursor: text; transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .hashtag-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,122,255,0.12);
+  }
+  .hashtag-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--accent-soft); color: var(--accent);
+    border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 500;
+  }
+  .hashtag-tag button { background: none; border: none; cursor: pointer; color: var(--accent); font-size: 14px; line-height: 1; padding: 0; opacity: 0.6; }
+  .hashtag-input { border: none !important; background: transparent !important; padding: 3px 4px !important; margin: 0 !important; min-width: 80px; flex: 1; font-size: 14px; color: var(--dark); outline: none; font-family: var(--font); }
+
+  .btn-primary {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 12px; padding: 13px 28px;
+    font-family: var(--font); font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.15s; letter-spacing: -0.2px;
+  }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-secondary {
+    background: var(--card); color: var(--muted);
+    border: 0.5px solid var(--border);
+    border-radius: 12px; padding: 12px 22px;
+    font-family: var(--font); font-size: 15px; cursor: pointer; font-weight: 500;
+  }
+  .btn-secondary:hover { color: var(--dark); }
+  .copy-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 9px; padding: 9px 16px;
+    font-family: var(--font); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.15s; margin-right: 8px;
+  }
+  .copy-btn:hover { opacity: 0.85; }
+  .open-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--grouped); color: var(--dark);
+    border: 0.5px solid var(--border);
+    border-radius: 9px; padding: 9px 16px;
+    font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer;
+  }
+  .open-btn:hover { background: var(--border); }
+  .regen-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: transparent; color: var(--muted);
+    border: 0.5px solid var(--border);
+    border-radius: 9px; padding: 7px 12px;
+    font-family: var(--font); font-size: 12px; cursor: pointer; margin-left: auto; font-weight: 500;
+  }
+  .regen-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+
+  .loading-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 14px; }
+  .loading-dots { display: flex; gap: 6px; }
+  .loading-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: bounce 1.2s infinite; }
+  .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); opacity: 0.3; } 30% { transform: translateY(-9px); opacity: 1; } }
+  .loading-text { font-size: 14px; color: var(--muted); font-weight: 400; }
+
+  .generate-box { background: var(--card); border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+
+  .ptabs { display: flex; border-bottom: 0.5px solid var(--border); background: var(--grouped); }
+  .ptab {
+    padding: 11px 18px; font-size: 13px; color: var(--muted);
+    cursor: pointer; border-bottom: 2px solid transparent;
+    margin-bottom: -0.5px; transition: all 0.15s; user-select: none;
+    font-family: var(--font); font-weight: 500;
+    background: transparent;
+  }
+  .ptab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; background: var(--card); }
+  .ptab-panel { display: none; }
+  .ptab-panel.active { display: block; }
+
+  .post-editor {
+    width: 100%; min-height: 440px; padding: 18px;
+    font-family: var(--font); font-size: 15px;
+    color: var(--dark); line-height: 1.8; border: none; outline: none;
+    background: var(--card);
+  }
+  .short-preview {
+    padding: 18px; font-size: 14px; color: var(--dark);
+    line-height: 1.8; white-space: pre-wrap; word-break: break-all;
+    min-height: 220px; outline: none; font-family: var(--font);
+  }
+
+  .panel-actions { padding: 12px 16px; border-top: 0.5px solid var(--border); display: flex; gap: 8px; align-items: center; background: var(--grouped); }
+  .char-info { font-size: 11px; color: var(--light); padding: 6px 18px 0; font-weight: 400; }
+
+  .tip-box {
+    background: var(--accent-soft); border-radius: 10px;
+    padding: 12px 14px; font-size: 13px; color: #1A56B0;
+    line-height: 1.6; margin-bottom: 16px;
+  }
+  .tip-box strong { color: var(--dark); font-weight: 600; }
+
+  .toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(28,28,30,0.88);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    color: white; padding: 11px 22px; border-radius: 20px;
+    font-size: 13px; font-weight: 500;
+    opacity: 0; transition: all 0.25s; z-index: 999;
+    pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 600px) {
+    .row2 { grid-template-columns: 1fr; }
+    .type-grid { grid-template-columns: repeat(2, 1fr); }
+    .header { padding: 12px 16px; }
+    .container { padding: 20px 12px 80px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">포스팅 <span>도우미</span></div>
+  <div class="header-sub">AI가 블로그 글 써드려요</div>
+</div>
+
+<div class="container">
+
+  <div class="steps">
+    <div class="step active" id="step-1"><div class="step-num">1</div><div class="step-label">정보 입력</div></div>
+    <div class="step-line"></div>
+    <div class="step" id="step-2"><div class="step-num">2</div><div class="step-label">AI 생성 중</div></div>
+    <div class="step-line"></div>
+    <div class="step" id="step-3"><div class="step-num">3</div><div class="step-label">수정 & 복사</div></div>
+  </div>
+
+  <!-- 1단계: 정보 입력 -->
+  <div class="panel active" id="panel-1">
+    <div class="sec-label">콘텐츠 유형</div>
+    <div class="type-grid">
+      <div class="type-btn selected" onclick="selectType(this,'cafe')"><div class="type-icon">☕</div>카페 후기</div>
+      <div class="type-btn" onclick="selectType(this,'restaurant')"><div class="type-icon">🍽️</div>맛집 후기</div>
+      <div class="type-btn" onclick="selectType(this,'travel')"><div class="type-icon">✈️</div>여행</div>
+      <div class="type-btn" onclick="selectType(this,'ootd')"><div class="type-icon">👗</div>오오티디</div>
+      <div class="type-btn" onclick="selectType(this,'vlog')"><div class="type-icon">🎬</div>브이로그</div>
+      <div class="type-btn" onclick="selectType(this,'sponsored')"><div class="type-icon">🎁</div>협찬 리뷰</div>
+    </div>
+
+    <div class="card">
+      <div class="sec-label">기본 정보</div>
+
+      <label>장소 / 브랜드명 <span style="color:var(--accent);">*</span></label>
+      <input type="text" id="place" placeholder="예) 카페 노티드 성수점 / 마르디메크르디">
+
+      <label>핵심 키워드 <span style="font-size:11px; font-weight:400; color:var(--muted);">— 제목에 넣고 싶은 단어</span></label>
+      <input type="text" id="keyword" placeholder="예) 성수 감성카페, 취준생 공부카페, 혼자 가기 좋은 곳">
+
+      <label>메모 <span style="font-size:11px; font-weight:400; color:var(--muted);">— 생각나는 대로 아무렇게나 써도 돼요</span></label>
+      <textarea id="memo" placeholder="분위기, 메뉴, 가격, 느낌, 좋았던 점, 아쉬운 점 등&#10;키워드만 나열해도 OK — 예) 창가 자리 예쁨, 라떼 6500원, 조용해서 좋음, 주차 없음, 재방문 의사 있음"></textarea>
+
+      <div class="row2">
+        <div>
+          <label>별점</label>
+          <select id="rating">
+            <option value="⭐⭐⭐⭐⭐">⭐⭐⭐⭐⭐ 5점 — 완벽</option>
+            <option value="⭐⭐⭐⭐" selected>⭐⭐⭐⭐ 4점 — 좋아요</option>
+            <option value="⭐⭐⭐">⭐⭐⭐ 3점 — 보통</option>
+            <option value="⭐⭐">⭐⭐ 2점 — 아쉬워요</option>
+          </select>
+        </div>
+        <div>
+          <label>글 분위기</label>
+          <select id="tone">
+            <option value="감성적이고 따뜻하게">감성적으로 — 따뜻하고 문학적</option>
+            <option value="친근하고 솔직하게" selected>솔직하게 — 친구한테 말하듯</option>
+            <option value="깔끔하고 정보 중심으로">정보 중심 — 실용적으로</option>
+          </select>
+        </div>
+      </div>
+
+      <label>해시태그 <span style="font-size:11px; font-weight:400; color:var(--muted);">— 입력 후 Enter (비워도 AI가 추천해줘요)</span></label>
+      <div class="hashtag-wrap" id="hashtag-wrap" onclick="document.getElementById('htag-field').focus()">
+        <input class="hashtag-input" id="htag-field" type="text" placeholder="#태그 입력 후 Enter" onkeydown="handleHashtag(event)">
+      </div>
+    </div>
+
+    <div class="tip-box">
+      <strong>메모 칸을 채울수록 글이 자연스러워져요.</strong> 완벽한 문장 안 써도 돼요. "라떼 맛있음, 자리 협소, 대기 30분" 이런 키워드만 던져줘도 AI가 예쁘게 풀어써드려요.
+    </div>
+
+    <div class="nav-row" style="justify-content:flex-end;">
+      <button class="btn-primary" onclick="startGenerate()">✦ AI로 블로그 글 생성하기</button>
+    </div>
+  </div>
+
+  <!-- 2단계: 생성 중 -->
+  <div class="panel" id="panel-2">
+    <div class="card">
+      <div class="loading-wrap">
+        <div class="loading-dots">
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+        </div>
+        <div class="loading-text" id="loading-text">블로그 글 구상 중...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3단계: 결과 -->
+  <div class="panel" id="panel-3">
+    <div class="sec-label">생성된 포스팅 — 자유롭게 수정하세요</div>
+
+    <div class="generate-box">
+      <div class="ptabs">
+        <div class="ptab active" onclick="switchTab(this,'blog')">📝 네이버 블로그</div>
+        <div class="ptab" onclick="switchTab(this,'insta')">📸 인스타그램</div>
+        <div class="ptab" onclick="switchTab(this,'yt')">▶️ 유튜브</div>
+      </div>
+
+      <!-- 블로그 탭 -->
+      <div class="ptab-panel active" id="tab-blog">
+        <div class="post-editor" id="blog-content" contenteditable="true" oninput="updateCharDiv('blog-content','blog-char','자')"></div>
+        <div class="char-info" id="blog-char" style="padding-bottom:8px;"></div>
+        <div class="panel-actions">
+          <button class="copy-btn" onclick="copyDiv('blog-content','블로그')">📋 복사하기</button>
+          <button class="open-btn" onclick="window.open('https://blog.naver.com/PostWriteForm.naver','_blank')">↗ 블로그 글쓰기 열기</button>
+          <button class="regen-btn" onclick="regenSilent()">↺ 다시 쓰기</button>
+        </div>
+      </div>
+
+      <!-- 인스타 탭 -->
+      <div class="ptab-panel" id="tab-insta">
+        <div class="short-preview" id="insta-content" contenteditable="true" oninput="updateCharDiv('insta-content','insta-char','자 / 2,200자 권장')"></div>
+        <div class="char-info" id="insta-char" style="padding-bottom:8px;"></div>
+        <div class="panel-actions">
+          <button class="copy-btn" onclick="copyDiv('insta-content','인스타그램')">📋 복사하기</button>
+          <button class="open-btn" onclick="window.open('https://www.instagram.com','_blank')">↗ 인스타그램 열기</button>
+        </div>
+      </div>
+
+      <!-- 유튜브 탭 -->
+      <div class="ptab-panel" id="tab-yt">
+        <div class="short-preview" id="yt-content" contenteditable="true" oninput="updateCharDiv('yt-content','yt-char','자 / 5,000자 권장')"></div>
+        <div class="char-info" id="yt-char" style="padding-bottom:8px;"></div>
+        <div class="panel-actions">
+          <button class="copy-btn" onclick="copyDiv('yt-content','유튜브')">📋 복사하기</button>
+          <button class="open-btn" onclick="window.open('https://studio.youtube.com','_blank')">↗ YouTube Studio 열기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip-box">
+      <strong>이렇게 쓰세요</strong> — 블로그 탭에서 수정 → 복사 → 네이버 블로그 붙여넣기. 인스타·유튜브 탭은 블로그 내용을 짧게 자동 정리한 버전이에요. 직접 수정도 가능해요!
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-secondary" onclick="goStep(1)">← 정보 수정하기</button>
+      <button class="btn-primary" onclick="resetAll()">✦ 새 포스팅 쓰기</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let selectedType = 'cafe';
+  let hashtags = [];
+
+  const typeLabels = {
+    cafe:'카페 후기', restaurant:'맛집 후기', travel:'여행 브이로그',
+    ootd:'오오티디/코디', vlog:'일상 브이로그', sponsored:'협찬 리뷰'
+  };
+
+  function selectType(el, key) {
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedType = key;
+  }
+
+  function goStep(n) {
+    [1,2,3].forEach(i => {
+      document.getElementById('panel-'+i).classList.toggle('active', i===n);
+      const s = document.getElementById('step-'+i);
+      s.classList.remove('active','done');
+      if (i===n) s.classList.add('active');
+      else if (i<n) s.classList.add('done');
+    });
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function handleHashtag(e) {
+    if (e.key==='Enter' || e.key===' ') {
+      e.preventDefault();
+      const val = e.target.value.trim().replace(/^#/,'');
+      if (val && !hashtags.includes(val)) { hashtags.push(val); renderHashtags(); }
+      e.target.value = '';
+    }
+  }
+
+  function renderHashtags() {
+    const wrap = document.getElementById('hashtag-wrap');
+    wrap.querySelectorAll('.hashtag-tag').forEach(t=>t.remove());
+    const input = document.getElementById('htag-field');
+    hashtags.forEach((tag,i) => {
+      const el = document.createElement('div');
+      el.className = 'hashtag-tag';
+      el.innerHTML = `#${tag} <button onclick="removeTag(${i})">×</button>`;
+      wrap.insertBefore(el, input);
+    });
+  }
+
+  function removeTag(i) { hashtags.splice(i,1); renderHashtags(); }
+
+  function switchTab(el, key) {
+    document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.ptab-panel').forEach(p=>p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-'+key).classList.add('active');
+  }
+
+  function buildPrompt(forRegen) {
+    const place = document.getElementById('place').value.trim();
+    const memo = document.getElementById('memo').value;
+    const keyword = document.getElementById('keyword').value;
+    const rating = document.getElementById('rating').value;
+    const tone = document.getElementById('tone').value;
+    const type = typeLabels[selectedType];
+    const userTags = hashtags.length > 0 ? hashtags.join(', ') : '없음 (AI가 직접 추천)';
+    const isSponsored = selectedType === 'sponsored';
+
+    return `너는 네이버 블로그 ${type} 포스팅 전문 작가야. 아래 정보를 바탕으로 자연스럽고 ${tone} 블로그 포스팅을 완성해줘.${forRegen ? ' (이전과 다른 표현과 오프닝으로 새롭게 써줘)' : ''}
+
+[입력 정보]
+- 유형: ${type}
+- 장소/브랜드: ${place}
+- 키워드: ${keyword || '없음'}
+- 메모: ${memo || '없음'}
+- 별점: ${rating}
+- 분위기: ${tone}
+- 해시태그: ${userTags}
+${isSponsored ? '- 협찬 포스팅: 첫 줄에 "※ 본 포스팅은 협찬을 받아 작성되었습니다." 반드시 포함' : ''}
+
+[구성 — 단락마다 한 줄 띄워서 명확히 구분해줘]
+1. 오프닝: 날씨/기분/상황으로 공감되게 시작 (2~3문장) → 바로 아래 [사진1 — 대표 외관/메인샷]
+2. 기본정보: 📍위치 ☕메뉴/제품 💰가격대 🕐운영시간 — 아이콘 활용
+3. 분위기/공간 묘사 → [사진2 — 내부 인테리어/분위기샷]
+4. 메뉴/제품 상세 (메모 최대 활용) → [사진3 — 메뉴/제품 클로즈업]
+5. 추천 포인트 or 특별한 경험 → [사진4 — 디테일샷 or 추가컷] (선택)
+6. 솔직총평: 장점 2개 + 아쉬운점 1개
+7. 마무리: ${rating} | 재방문 의사
+8. 해시태그: 검색 잘 되는 중형태그 15개 (지역+카테고리 조합, 마지막에 한 줄로)
+
+[사진 태그 규칙]
+- 사진이 들어가면 좋을 자리마다 반드시 [사진N — 촬영 가이드] 형식으로 삽입
+- 촬영 가이드는 10자 이내로 간결하게 (예: [사진1 — 외관 전경], [사진2 — 라떼 클로즈업])
+- 사진 태그는 단락과 단락 사이 별도 줄에 위치
+- 총 3~5개 사이로 자연스럽게 배치
+
+글자수 1000~1500자 (사진 태그 제외). 이모지 자연스럽게. 텍스트만 출력해줘.`;
+  }
+
+  async function startGenerate() {
+    const place = document.getElementById('place').value.trim();
+    if (!place) { showToast('장소 또는 브랜드명을 입력해주세요!'); return; }
+
+    goStep(2);
+    const msgs = ['블로그 글 구상 중...','감성 표현 고르는 중...','해시태그 뽑는 중...','마무리 다듬는 중...'];
+    let mi = 0;
+    const lt = document.getElementById('loading-text');
+    const iv = setInterval(() => { lt.textContent = msgs[mi++ % msgs.length]; }, 1500);
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: buildPrompt(false) }]
+        })
+      });
+      const data = await res.json();
+      const blogText = data.content?.[0]?.text || '';
+      clearInterval(iv);
+      renderAll(blogText);
+      goStep(3);
+    } catch(e) {
+      clearInterval(iv);
+      showToast('오류가 발생했어요. 다시 시도해주세요.');
+      goStep(1);
+    }
+  }
+
+  async function regenSilent() {
+    document.getElementById('blog-content').value = '다시 쓰는 중...';
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: buildPrompt(true) }]
+        })
+      });
+      const data = await res.json();
+      const blogText = data.content?.[0]?.text || '';
+      renderAll(blogText);
+      showToast('새 버전으로 다시 썼어요!');
+    } catch(e) {
+      showToast('다시 쓰기 실패. 재시도해주세요.');
+    }
+  }
+
+  function renderAll(blogText) {
+    const place = document.getElementById('place').value.trim();
+    const keyword = document.getElementById('keyword').value;
+    const type = typeLabels[selectedType];
+
+    // 블로그 — 사진 태그 하이라이트 + 단락 렌더링
+    const blogEl = document.getElementById('blog-content');
+    const blogHtml = blogText
+      .split('\n')
+      .map(line => {
+        // [사진N — ...] 패턴 하이라이트
+        const highlighted = line.replace(/(\[사진\d+[^\]]*\])/g,
+          '<span style="display:inline-block;background:#EAF2FF;color:#007AFF;border:1px dashed #007AFF;border-radius:6px;padding:2px 10px;font-size:12px;font-weight:600;margin:2px 0;">$1</span>');
+        return `<div>${highlighted || '<br>'}</div>`;
+      })
+      .join('');
+    blogEl.innerHTML = blogHtml;
+    updateCharDiv('blog-content','blog-char','자');
+
+    // 해시태그 줄 찾기
+    const lines = blogText.split('\n');
+    const tagLine = lines.filter(l => (l.match(/#\S+/g)||[]).length >= 3).pop() || '';
+    // 사진 태그 제거한 순수 텍스트 (인스타·유튜브용)
+    const bodyOnly = blogText.replace(tagLine,'').replace(/\[사진\d+[^\]]*\]/g,'').replace(/\n{3,}/g,'\n\n').trim();
+
+    // 인스타 (300자 + 태그)
+    const instaBody = bodyOnly.length > 320 ? bodyOnly.slice(0,320)+'...' : bodyOnly;
+    const instaText = `📍 ${place}\n\n${instaBody}\n\n─\n${tagLine}`;
+    document.getElementById('insta-content').textContent = instaText;
+    updateCharDiv('insta-content','insta-char','자 / 2,200자 권장');
+
+    // 유튜브 (설명란)
+    const ytBody = bodyOnly.slice(0,400);
+    const ytText = `【${keyword||place}】 ${type}\n\n📍 ${place}\n\n${ytBody}...\n\n─────────────────\n📌 구독과 좋아요는 큰 힘이 됩니다!\n\n${tagLine}`;
+    document.getElementById('yt-content').textContent = ytText;
+    updateCharDiv('yt-content','yt-char','자 / 5,000자 권장');
+  }
+
+  function updateChar(id, charId, suffix) {
+    const len = document.getElementById(id).value.length;
+    document.getElementById(charId).textContent = len.toLocaleString() + '자' + suffix;
+  }
+
+  function updateCharDiv(id, charId, suffix) {
+    const len = document.getElementById(id).innerText.length;
+    document.getElementById(charId).textContent = len.toLocaleString() + suffix;
+  }
+
+  function copyTA(id, name) {
+    navigator.clipboard.writeText(document.getElementById(id).value)
+      .then(() => showToast(name + ' 내용 복사됐어요!'));
+  }
+
+  function copyDiv(id, name) {
+    const el = document.getElementById(id);
+    // innerText로 복사 (사진 태그 텍스트 포함, HTML 태그 제거)
+    navigator.clipboard.writeText(el.innerText)
+      .then(() => showToast(name + ' 내용 복사됐어요!'));
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function resetAll() {
+    ['place','keyword','memo'].forEach(id => document.getElementById(id).value = '');
+    hashtags = [];
+    renderHashtags();
+    document.getElementById('blog-content').value = '';
+    document.getElementById('insta-content').textContent = '';
+    document.getElementById('yt-content').textContent = '';
+    goStep(1);
+  }
+</script>
+</body>
+</html>
